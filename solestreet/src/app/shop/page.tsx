@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback, Suspense } from "react";
+import { useState, useMemo, useCallback, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
   SlidersHorizontal,
@@ -66,17 +66,25 @@ function ShopPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const initialCategory = searchParams.get("category") || "";
-  const initialGender = searchParams.get("gender") || "";
-  const initialSort = searchParams.get("sort") || "default";
-  const initialBrand = searchParams.get("brand") || "";
+  const urlCategory = searchParams.get("category") || "";
+  const urlGender = searchParams.get("gender") || "";
+  const urlSort = searchParams.get("sort") || "default";
+  const urlBrand = searchParams.get("brand") || "";
 
-  const [category, setCategory] = useState(initialCategory);
-  const [gender, setGender] = useState(initialGender);
-  const [sort, setSort] = useState(initialSort);
-  const [brand, setBrand] = useState(initialBrand);
+  const [category, setCategory] = useState(urlCategory);
+  const [gender, setGender] = useState(urlGender);
+  const [sort, setSort] = useState(urlSort);
+  const [brand, setBrand] = useState(urlBrand);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [gridCols, setGridCols] = useState<3 | 4>(4);
+
+  // Sync local state when URL search params change (e.g., navbar navigation)
+  useEffect(() => {
+    setCategory(urlCategory);
+    setGender(urlGender);
+    setSort(urlSort);
+    setBrand(urlBrand);
+  }, [urlCategory, urlGender, urlSort, urlBrand]);
 
   const brands = useMemo(() => getAllBrands(), []);
 
@@ -243,11 +251,19 @@ function ShopPageContent() {
                       )}
                     </Button>
                   </SheetTrigger>
-                  <SheetContent side="left" className="w-80 p-0">
-                    <SheetHeader className="p-6 border-b border-zinc-100">
+                  <SheetContent side="left" className="w-80 p-0 flex flex-col">
+                    <SheetHeader className="p-6 border-b border-zinc-100 shrink-0">
                       <SheetTitle>Filters</SheetTitle>
                     </SheetHeader>
-                    <div className="p-6">{filterContent}</div>
+                    <div className="p-6 flex-1 overflow-y-auto">{filterContent}</div>
+                    <div className="p-4 border-t border-zinc-100 bg-white shrink-0">
+                      <Button
+                        className="w-full rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white font-semibold h-11"
+                        onClick={() => setMobileFiltersOpen(false)}
+                      >
+                        View {products.length} Product{products.length === 1 ? "" : "s"}
+                      </Button>
+                    </div>
                   </SheetContent>
                 </Sheet>
 

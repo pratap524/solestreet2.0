@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -18,6 +18,7 @@ import {
   ShoppingBag,
   ArrowRight,
   Truck,
+  Shield,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,33 +30,48 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { ProductCard } from "@/components/product/product-card";
 import { useAuth } from "@/context/auth-context";
 import { useWishlist } from "@/context/wishlist-context";
 import { getUserOrders } from "@/lib/firebase/firestore";
 import { products } from "@/data/products";
-import { formatPrice } from "@/lib/format";
+import { formatPrice, formatDate } from "@/lib/format";
 import { addressSchema, type AddressFormValues } from "@/lib/validations/checkout";
 import { profileSchema, type ProfileFormValues } from "@/lib/validations/auth";
 import type { Order } from "@/types";
 import { toast } from "sonner";
 
-export default function AccountPage() {
+function AccountContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get("tab") as "overview" | "orders" | "addresses" | "wishlist" | "settings" | null;
+
   const { user, isLoading, signOut, updateUser, addAddress, removeAddress, setAsDefaultAddress } =
     useAuth();
   const { wishlist, toggleWishlist } = useWishlist();
 
-  const [activeTab, setActiveTab] = useState<"overview" | "orders" | "addresses" | "wishlist" | "settings">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "orders" | "addresses" | "wishlist" | "settings">(
+    tabParam && ["overview", "orders", "addresses", "wishlist", "settings"].includes(tabParam)
+      ? tabParam
+      : "overview"
+  );
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoadingOrders, setIsLoadingOrders] = useState(true);
   const [addressModalOpen, setAddressModalOpen] = useState(false);
 
-  // Redirect unauthenticated users
+  // Sync activeTab if searchParam changes
   useEffect(() => {
-    if (!isLoading && !user) {
+    if (tabParam && ["overview", "orders", "addresses", "wishlist", "settings"].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam]);
+
+  // Redirect unauthenticated users UNLESS they are viewing their guest wishlist
+  useEffect(() => {
+    if (!isLoading && !user && tabParam !== "wishlist") {
       router.push("/login?redirect=/account");
     }
-  }, [user, isLoading, router]);
+  }, [user, isLoading, router, tabParam]);
 
   // Load orders
   useEffect(() => {
@@ -124,12 +140,59 @@ export default function AccountPage() {
     router.push("/");
   };
 
-  if (isLoading || !user) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-zinc-50 flex items-center justify-center">
         <div className="text-center space-y-3">
           <div className="w-8 h-8 border-2 border-zinc-900 border-t-transparent rounded-full animate-spin mx-auto" />
           <p className="text-xs text-zinc-500 font-medium">Loading account...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    const guestWishlistProducts = products.filter((p) => wishlist.includes(p.id));
+    return (
+      <div className="min-h-screen bg-zinc-50 py-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="bg-white rounded-2xl border border-zinc-200/80 p-6 sm:p-8 mb-8 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-black text-zinc-900 tracking-tight flex items-center gap-2">
+                <Heart className="h-6 w-6 text-red-500 fill-current" />
+                Your Wishlist
+              </h1>
+              <p className="text-sm text-zinc-500 mt-1">
+                Saved on this device ({guestWishlistProducts.length} item{guestWishlistProducts.length === 1 ? "" : "s"})
+              </p>
+            </div>
+            <Button asChild className="rounded-xl font-semibold bg-zinc-900 hover:bg-zinc-800 text-white">
+              <Link href="/login?redirect=/account?tab=wishlist">
+                Sign In to Sync Across Devices
+              </Link>
+            </Button>
+          </div>
+
+          {guestWishlistProducts.length === 0 ? (
+            <div className="text-center py-16 bg-white rounded-2xl border border-zinc-200/80 p-8 shadow-xs">
+              <div className="w-16 h-16 rounded-full bg-zinc-100 flex items-center justify-center mx-auto mb-4">
+                <Heart className="h-8 w-8 text-zinc-400" />
+              </div>
+              <h3 className="text-lg font-bold text-zinc-900 mb-1">Your wishlist is empty</h3>
+              <p className="text-sm text-zinc-500 mb-6 max-w-sm mx-auto">
+                Explore our collection and click the heart icon on any pair to save them here.
+              </p>
+              <Button asChild className="rounded-xl px-8">
+                <Link href="/shop">Start Shopping</Link>
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+              {guestWishlistProducts.map((p, i) => (
+                <ProductCard key={p.id} product={p} index={i} />
+              ))}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -161,14 +224,27 @@ export default function AccountPage() {
             </div>
           </div>
 
-          <Button
-            variant="outline"
-            onClick={handleSignOut}
-            className="rounded-xl font-semibold text-xs border-zinc-200 text-zinc-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200"
-          >
-            <LogOut className="h-4 w-4 mr-2" />
-            Sign Out
-          </Button>
+          <div className="flex items-center gap-2">
+            {user.role === "admin" && (
+              <Button
+                asChild
+                className="bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold text-xs h-9 px-3.5 shadow-sm"
+              >
+                <Link href="/admin">
+                  <Shield className="h-4 w-4 mr-1.5" />
+                  Admin Panel
+                </Link>
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              onClick={handleSignOut}
+              className="rounded-xl font-semibold text-xs border-zinc-200 text-zinc-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200 h-9"
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Sign Out
+            </Button>
+          </div>
         </div>
 
         {/* Dashboard Grid */}
@@ -261,6 +337,21 @@ export default function AccountPage() {
                 <Settings className="h-4 w-4" />
                 Settings
               </button>
+
+              {user.role === "admin" && (
+                <div className="pt-2 border-t border-zinc-100">
+                  <Link
+                    href="/admin"
+                    className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 transition-colors"
+                  >
+                    <span className="flex items-center gap-3">
+                      <Shield className="h-4 w-4 text-purple-600" />
+                      Admin Panel
+                    </span>
+                    <Badge className="bg-purple-600 text-white text-[10px] px-1.5 py-0.5">Admin</Badge>
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
 
@@ -269,6 +360,25 @@ export default function AccountPage() {
             {/* OVERVIEW TAB */}
             {activeTab === "overview" && (
               <div className="space-y-6">
+                {user.role === "admin" && (
+                  <div className="bg-gradient-to-r from-purple-950 via-zinc-900 to-zinc-900 rounded-2xl p-6 text-white border border-purple-800/40 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-purple-600/30 border border-purple-500/30 flex items-center justify-center shrink-0">
+                        <Shield className="h-6 w-6 text-purple-300" />
+                      </div>
+                      <div>
+                        <h3 className="text-base font-bold text-white">Administrator Access Active</h3>
+                        <p className="text-xs text-zinc-300 mt-0.5">
+                          Manage products, categories, orders, customers, coupons, and product reviews in the control center.
+                        </p>
+                      </div>
+                    </div>
+                    <Button asChild className="bg-white text-zinc-950 hover:bg-zinc-100 font-bold rounded-xl h-10 px-5 shrink-0 shadow-sm">
+                      <Link href="/admin">Open Admin Panel</Link>
+                    </Button>
+                  </div>
+                )}
+
                 {/* Stats row */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="bg-white p-5 rounded-2xl border border-zinc-200/80 shadow-xs">
@@ -323,11 +433,11 @@ export default function AccountPage() {
                       <p className="text-xs text-zinc-400 mt-1 mb-4">
                         Discover your next favorite pair from our collection.
                       </p>
-                      <Link href="/shop">
-                        <Button size="sm" className="rounded-xl">
+                      <Button asChild size="sm" className="rounded-xl">
+                        <Link href="/shop">
                           Start Shopping
-                        </Button>
-                      </Link>
+                        </Link>
+                      </Button>
                     </div>
                   ) : (
                     <div className="divide-y divide-zinc-100">
@@ -345,7 +455,7 @@ export default function AccountPage() {
                             </div>
                             <p className="text-xs text-zinc-500 mt-1">
                               {order.items.length} item{order.items.length !== 1 ? "s" : ""} •{" "}
-                              {new Date(order.createdAt).toLocaleDateString()}
+                              {formatDate(order.createdAt)}
                             </p>
                           </div>
                           <div className="text-right">
@@ -383,9 +493,9 @@ export default function AccountPage() {
                     <p className="text-xs text-zinc-500 mt-1 mb-6">
                       When you place an order, it will show up here with live status tracking.
                     </p>
-                    <Link href="/shop">
-                      <Button className="rounded-xl font-semibold">Explore Catalog</Button>
-                    </Link>
+                    <Button asChild className="rounded-xl font-semibold">
+                      <Link href="/shop">Explore Catalog</Link>
+                    </Button>
                   </div>
                 ) : (
                   <div className="space-y-6">
@@ -406,7 +516,7 @@ export default function AccountPage() {
                               Date Placed
                             </span>
                             <p className="font-medium text-xs text-zinc-700">
-                              {new Date(order.createdAt).toLocaleDateString()}
+                              {formatDate(order.createdAt)}
                             </p>
                           </div>
                           <div>
@@ -495,9 +605,9 @@ export default function AccountPage() {
                     <p className="text-xs text-zinc-500 mt-1 mb-6">
                       Click the heart icon on any shoe to save it to your personal wishlist.
                     </p>
-                    <Link href="/shop">
-                      <Button className="rounded-xl font-semibold">Explore Catalog</Button>
-                    </Link>
+                    <Button asChild className="rounded-xl font-semibold">
+                      <Link href="/shop">Explore Catalog</Link>
+                    </Button>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -535,11 +645,11 @@ export default function AccountPage() {
                         </div>
 
                         <div className="mt-4 pt-3 border-t border-zinc-100">
-                          <Link href={`/product/${p.slug}`}>
-                            <Button size="sm" className="w-full rounded-xl text-xs">
+                          <Button asChild size="sm" className="w-full rounded-xl text-xs">
+                            <Link href={`/product/${p.slug}`}>
                               Select Size & Buy
-                            </Button>
-                          </Link>
+                            </Link>
+                          </Button>
                         </div>
                       </div>
                     ))}
@@ -795,5 +905,22 @@ export default function AccountPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AccountPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-zinc-50 flex items-center justify-center">
+          <div className="text-center space-y-3">
+            <div className="w-8 h-8 border-2 border-zinc-900 border-t-transparent rounded-full animate-spin mx-auto" />
+            <p className="text-xs text-zinc-500 font-medium">Loading account...</p>
+          </div>
+        </div>
+      }
+    >
+      <AccountContent />
+    </Suspense>
   );
 }

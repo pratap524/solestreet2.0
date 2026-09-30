@@ -86,15 +86,22 @@ export async function signInWithEmail(
 ): Promise<UserProfile> {
   if (!isFirebaseConfigured()) {
     const users = getLocalUsersDb();
+    const isAdminEmail =
+      email.toLowerCase() === "admin@solestreet.com" ||
+      email.toLowerCase().startsWith("admin@");
     const existing = users[email.toLowerCase()];
+
     if (!existing) {
-      // Create one automatically for smooth testing
-      const uid = "user_" + Math.random().toString(36).substring(2, 9);
+      const uid = isAdminEmail
+        ? "admin_demo_uid"
+        : "user_" + Math.random().toString(36).substring(2, 9);
       const profile: UserProfile = {
         uid,
         email: email.toLowerCase(),
-        displayName: email.split("@")[0] || "Shoe Enthusiast",
-        role: "customer",
+        displayName: isAdminEmail
+          ? "Admin"
+          : email.split("@")[0] || "Shoe Enthusiast",
+        role: isAdminEmail ? "admin" : "customer",
         addresses: [],
         createdAt: new Date().toISOString(),
       };
@@ -105,6 +112,13 @@ export async function signInWithEmail(
       }
       return profile;
     }
+
+    if (isAdminEmail && existing.role !== "admin") {
+      existing.role = "admin";
+      users[email.toLowerCase()] = existing;
+      saveLocalUsersDb(users);
+    }
+
     if (typeof window !== "undefined") {
       localStorage.setItem(MOCK_STORAGE_USER_KEY, JSON.stringify(existing));
     }

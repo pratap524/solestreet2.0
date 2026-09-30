@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { adminGetReviews, adminUpdateReviewStatus, adminDeleteReview } from "@/lib/admin-data";
+import { formatDate } from "@/lib/format";
 import { toast } from "sonner";
 import type { Review, ReviewStatus } from "@/types";
 
@@ -90,7 +91,7 @@ export default function AdminReviewsPage() {
                 </div>
                 <p className="text-sm font-semibold text-white mb-1">{review.title}</p>
                 <p className="text-xs text-zinc-400 leading-relaxed">{review.comment}</p>
-                <p className="text-[10px] text-zinc-600 mt-2">{new Date(review.createdAt).toLocaleDateString()} · Product: {review.productId}</p>
+                <p className="text-[10px] text-zinc-600 mt-2">{formatDate(review.createdAt)} · Product: {review.productId}</p>
               </div>
               <div className="flex flex-col gap-1 shrink-0">
                 <Button variant="ghost" size="icon" className="h-7 w-7 text-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10" onClick={() => updateStatus(review.id, "approved")} title="Approve">

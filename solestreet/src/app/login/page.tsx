@@ -97,8 +97,18 @@ function LoginForm() {
           </p>
         </div>
 
+        {redirect.startsWith("/admin") && (
+          <div className="mt-4 p-3.5 bg-purple-50 border border-purple-200 rounded-xl text-xs text-purple-900 font-medium flex items-start gap-2.5 shadow-xs">
+            <ShieldCheck className="h-4 w-4 text-purple-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold text-purple-950">Administrator Access Required</p>
+              <p className="text-purple-700 mt-0.5">Please sign in with your administrative credentials to access the SoleStreet Control Center.</p>
+            </div>
+          </div>
+        )}
+
         {/* Demo Quick Fill Helper */}
-        <div className="mt-6 bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900 flex items-center justify-between">
+        <div className="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900 flex items-center justify-between">
           <span className="font-medium flex items-center gap-1.5">
             <UserCheck className="h-4 w-4 text-amber-700" />
             Quick Demo Fill:
@@ -114,7 +124,7 @@ function LoginForm() {
             <button
               type="button"
               onClick={() => handleDemoLogin("admin")}
-              className="px-2.5 py-1 bg-amber-200/80 hover:bg-amber-300 font-semibold rounded-md transition-colors"
+              className="px-2.5 py-1 bg-purple-600 text-white hover:bg-purple-700 font-semibold rounded-md transition-colors"
             >
               Admin
             </button>

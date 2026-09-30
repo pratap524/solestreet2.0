@@ -40,7 +40,7 @@ export function PromoBanner() {
             <Button
               asChild
               size="lg"
-              className="bg-amber-400 hover:bg-amber-500 text-zinc-900 font-bold rounded-xl h-13 px-8 text-base"
+              className="bg-amber-400 hover:bg-amber-500 text-zinc-950 font-bold rounded-xl h-12 sm:h-14 px-8 text-base shadow-lg shadow-amber-400/20"
             >
               <Link href="/shop?sort=price-asc">
                 Shop Sale
@@ -59,7 +59,7 @@ export function TrustBanner() {
     {
       icon: Truck,
       title: "Free Shipping",
-      description: "On orders over $100",
+      description: "On orders over $150",
     },
     {
       icon: RotateCcw,
@@ -81,7 +81,7 @@ export function TrustBanner() {
   return (
     <section className="py-12 sm:py-16 bg-zinc-50 border-y border-zinc-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           {features.map((feature, i) => (
             <motion.div
               key={feature.title}
@@ -89,9 +89,9 @@ export function TrustBanner() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.3, delay: i * 0.08 }}
-              className="text-center"
+              className="text-center p-5 rounded-2xl bg-white border border-zinc-200/60 shadow-xs hover:border-zinc-300 transition-colors"
             >
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-zinc-900 text-white mb-3">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-zinc-950 text-white mb-3 shadow-xs">
                 <feature.icon className="h-5 w-5" />
               </div>
               <h3 className="font-bold text-zinc-900 text-sm sm:text-base">

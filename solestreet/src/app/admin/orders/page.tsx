@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { Search, ChevronLeft, ChevronRight, Eye, Truck, Package as PackageIcon, Mail } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, Eye, Truck, Package as PackageIcon, Mail, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
-import { adminGetOrders, adminUpdateOrderStatus } from "@/lib/admin-data";
-import { formatPrice } from "@/lib/format";
+import { adminGetOrders, adminUpdateOrderStatus, adminDeleteOrder } from "@/lib/admin-data";
+import { formatPrice, formatDate } from "@/lib/format";
 import { toast } from "sonner";
 import type { Order, FulfillmentStatus } from "@/types";
 
@@ -40,8 +40,19 @@ export default function AdminOrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [trackingNumber, setTrackingNumber] = useState("");
   const [notes, setNotes] = useState("");
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   useEffect(() => { setOrders(adminGetOrders()); }, []);
+
+  const handleDeleteOrder = (id: string) => {
+    adminDeleteOrder(id);
+    setOrders(adminGetOrders());
+    if (selectedOrder?.id === id) {
+      setSelectedOrder(null);
+    }
+    setDeleteConfirm(null);
+    toast.success(`Order ${id} deleted`);
+  };
 
   const filtered = useMemo(() => {
     let result = [...orders];
@@ -128,12 +139,17 @@ export default function AdminOrdersPage() {
                     <Badge className={`text-[10px] font-semibold capitalize ${statusStyles[order.fulfillmentStatus] || ""}`}>{order.fulfillmentStatus}</Badge>
                   </td>
                   <td className="px-4 py-3 hidden md:table-cell">
-                    <span className="text-[10px] text-zinc-500">{new Date(order.createdAt).toLocaleDateString()}</span>
+                    <span className="text-[10px] text-zinc-500">{formatDate(order.createdAt)}</span>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <Button variant="ghost" size="sm" className="text-zinc-400 hover:text-white text-xs h-7 rounded-lg" onClick={() => { setSelectedOrder(order); setTrackingNumber(order.trackingNumber || ""); setNotes(order.notes || ""); }}>
-                      <Eye className="h-3.5 w-3.5 mr-1" /> View
-                    </Button>
+                    <div className="flex items-center justify-end gap-1">
+                      <Button variant="ghost" size="sm" className="text-zinc-400 hover:text-white text-xs h-7 rounded-lg" onClick={() => { setSelectedOrder(order); setTrackingNumber(order.trackingNumber || ""); setNotes(order.notes || ""); }}>
+                        <Eye className="h-3.5 w-3.5 mr-1" /> View
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-zinc-500 hover:text-red-400" title="Delete Order" onClick={() => setDeleteConfirm(order.id)}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -244,12 +260,37 @@ export default function AdminOrdersPage() {
                 </div>
               </div>
 
-              {/* Send Notification */}
-              <Button variant="outline" size="sm" className="w-full rounded-xl border-zinc-700 text-zinc-300 hover:text-white" onClick={handleSendNotification}>
-                <Mail className="h-3.5 w-3.5 mr-2" /> Send Status Notification
-              </Button>
+              {/* Actions row */}
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" className="flex-1 rounded-xl border-zinc-700 text-zinc-300 hover:text-white" onClick={handleSendNotification}>
+                  <Mail className="h-3.5 w-3.5 mr-2" /> Send Status Notification
+                </Button>
+                <Button variant="outline" size="sm" className="rounded-xl border-red-900/50 text-red-400 hover:bg-red-500/10 hover:text-red-300" onClick={() => setDeleteConfirm(selectedOrder.id)}>
+                  <Trash2 className="h-3.5 w-3.5 mr-1.5" /> Delete
+                </Button>
+              </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
+        <DialogContent className="sm:max-w-md bg-zinc-900 border-zinc-800 text-white">
+          <DialogHeader>
+            <DialogTitle>Delete Order</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-zinc-400">
+            Are you sure you want to delete order <span className="text-white font-mono">{deleteConfirm}</span>? This action cannot be undone.
+          </p>
+          <div className="flex gap-3 mt-4">
+            <Button variant="outline" className="flex-1 border-zinc-700 text-zinc-300 rounded-xl" onClick={() => setDeleteConfirm(null)}>
+              Cancel
+            </Button>
+            <Button className="flex-1 bg-red-600 hover:bg-red-700 text-white rounded-xl" onClick={() => deleteConfirm && handleDeleteOrder(deleteConfirm)}>
+              Delete Order
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

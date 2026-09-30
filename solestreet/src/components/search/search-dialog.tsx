@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Dialog,
   DialogContent,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { products } from "@/data/products";
 import { formatPrice } from "@/lib/format";
@@ -44,6 +45,7 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl p-0 gap-0 overflow-hidden [&>button]:hidden">
+        <DialogTitle className="sr-only">Search Shoes</DialogTitle>
         {/* Search input */}
         <div className="flex items-center gap-3 px-5 py-4 border-b border-zinc-100">
           <Search className="h-5 w-5 text-zinc-400 shrink-0" />

@@ -96,6 +96,7 @@ export const FOOTER_LINKS = {
     { label: "Press", href: "#" },
     { label: "Sustainability", href: "#" },
     { label: "Affiliate Program", href: "#" },
+    { label: "Admin Portal", href: "/admin" },
   ],
 };
 

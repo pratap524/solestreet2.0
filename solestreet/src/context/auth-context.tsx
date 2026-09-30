@@ -35,25 +35,46 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+function syncAuthCookie(role: string | null) {
+  if (typeof document === "undefined") return;
+  if (role) {
+    document.cookie = `solestreet_role=${role}; path=/; max-age=604800; SameSite=Lax`;
+  } else {
+    document.cookie = "solestreet_role=; path=/; max-age=0; SameSite=Lax";
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<UserProfile | null>(() => {
-    if (typeof window !== "undefined" && !isFirebaseConfigured()) {
-      const stored = localStorage.getItem("solestreet_mock_user");
-      if (stored) {
-        try {
-          return JSON.parse(stored);
-        } catch {
-          return null;
-        }
-      }
-    }
-    return null;
-  });
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
-  const [isLoading, setIsLoading] = useState(!isFirebaseConfigured() ? false : true);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Synchronize authentication cookie for edge middleware security
+  useEffect(() => {
+    if (user) {
+      syncAuthCookie(user.role);
+    } else {
+      syncAuthCookie(null);
+    }
+  }, [user]);
 
   useEffect(() => {
     if (!isFirebaseConfigured()) {
+      try {
+        const stored = localStorage.getItem("solestreet_mock_user");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          setUser(parsed);
+          syncAuthCookie(parsed.role || null);
+        } else {
+          syncAuthCookie(null);
+        }
+      } catch {
+        setUser(null);
+        syncAuthCookie(null);
+      } finally {
+        setIsLoading(false);
+      }
       return;
     }
 
@@ -62,8 +83,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (fbUser) {
         const profile = await getUserProfile(fbUser.uid);
         setUser(profile);
+        syncAuthCookie(profile?.role || null);
       } else {
         setUser(null);
+        syncAuthCookie(null);
       }
       setIsLoading(false);
     });
@@ -123,6 +146,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     await signOutUser();
+    syncAuthCookie(null);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.removeItem("solestreet_mock_user");
+      } catch {
+        // ignore
+      }
+    }
     setUser(null);
     setFirebaseUser(null);
   };

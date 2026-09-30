@@ -8,7 +8,7 @@ import { getFeaturedProducts, getNewArrivals, getBestsellers } from "@/data/prod
 export const metadata: Metadata = {
   title: "SoleStreet — Premium Footwear for Every Step",
   description:
-    "Discover the latest styles in running, casual, basketball, and outdoor shoes from the world's best brands. Free shipping on orders over $100.",
+    "Discover the latest styles in running, casual, basketball, and outdoor shoes from the world's best brands. Free shipping on orders over $150.",
 };
 
 export default function HomePage() {

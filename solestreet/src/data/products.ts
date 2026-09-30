@@ -13,7 +13,7 @@ const SHOE_IMAGES = {
   skate1: "https://images.unsplash.com/photo-1551107696-a4b0c5a0d9a2?w=800&q=80",
   skate2: "https://images.unsplash.com/photo-1584735175315-9d5df23860e6?w=800&q=80",
   hiking1: "https://images.unsplash.com/photo-1520219306100-ec4afeeefe58?w=800&q=80",
-  hiking2: "https://images.unsplash.com/photo-1606890542792-02ad16e3db80?w=800&q=80",
+  hiking2: "https://images.unsplash.com/photo-1501554728187-ce583db33af7?w=800&q=80",
   training1: "https://images.unsplash.com/photo-1491553895911-0055eca6402d?w=800&q=80",
   training2: "https://images.unsplash.com/photo-1539185441755-769473a23570?w=800&q=80",
   hero1: "https://images.unsplash.com/photo-1460353581641-37baddab0fa2?w=1400&q=80",

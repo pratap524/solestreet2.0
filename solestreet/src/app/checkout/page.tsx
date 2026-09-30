@@ -175,9 +175,9 @@ function CheckoutContent() {
           <p className="text-xs text-zinc-500 mt-1 mb-6">
             Add your favorite shoes to the cart to proceed through checkout.
           </p>
-          <Link href="/shop">
-            <Button className="w-full rounded-xl">Browse Catalog</Button>
-          </Link>
+          <Button asChild className="w-full rounded-xl">
+            <Link href="/shop">Browse Catalog</Link>
+          </Button>
         </div>
       </div>
     );
@@ -281,16 +281,16 @@ function CheckoutContent() {
             </div>
 
             <div className="pt-2 flex flex-col sm:flex-row gap-3">
-              <Link href={`/account/orders/${createdOrder.id}`} className="flex-1">
-                <Button className="w-full h-11 rounded-xl font-semibold">
+              <Button asChild className="flex-1 h-11 rounded-xl font-semibold">
+                <Link href={`/account/orders/${createdOrder.id}`}>
                   View Full Invoice
-                </Button>
-              </Link>
-              <Link href="/shop" className="flex-1">
-                <Button variant="outline" className="w-full h-11 rounded-xl font-semibold">
+                </Link>
+              </Button>
+              <Button asChild variant="outline" className="flex-1 h-11 rounded-xl font-semibold">
+                <Link href="/shop">
                   Continue Shopping
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             </div>
           </div>
         ) : (

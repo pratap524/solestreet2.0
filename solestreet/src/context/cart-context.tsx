@@ -147,24 +147,24 @@ export function CartProvider({ children }: { children: ReactNode }) {
     isOpen: false,
   });
 
-  const [couponCode, setCouponCode] = useState<string | null>(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("solestreet-coupon");
-    }
-    return null;
-  });
+  const [couponCode, setCouponCode] = useState<string | null>(null);
   const [discount, setDiscount] = useState<number>(0);
   const [selectedShippingMethod, setSelectedShippingMethod] = useState<ShippingMethod>(
     SHIPPING_METHODS[0]
   );
 
-  // Load cart from localStorage on mount
+  // Load cart and coupon from localStorage on mount
   useEffect(() => {
     try {
       const saved = localStorage.getItem("solestreet-cart");
       if (saved) {
         const items = JSON.parse(saved) as CartItem[];
         dispatch({ type: "LOAD_CART", payload: items });
+      }
+
+      const savedCoupon = localStorage.getItem("solestreet-coupon");
+      if (savedCoupon) {
+        setCouponCode(savedCoupon);
       }
     } catch {
       // Ignore parse errors

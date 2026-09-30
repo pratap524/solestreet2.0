@@ -176,17 +176,147 @@ export function adminUpdateOrderStatus(
   return orders[idx];
 }
 
+export function adminDeleteOrder(id: string): boolean {
+  const orders = adminGetOrders();
+  const filtered = orders.filter((o) => o.id !== id);
+  if (filtered.length === orders.length) return false;
+  setStore(KEYS.orders, filtered);
+  return true;
+}
+
 // ─── Customers ──────────────────────────────────────────────────────────────
 
+const DEFAULT_CUSTOMERS: UserProfile[] = [
+  {
+    uid: "cust_101",
+    email: "sarah.jenkins@example.com",
+    displayName: "Sarah Jenkins",
+    role: "customer",
+    addresses: [],
+    createdAt: "2026-01-15T10:30:00Z",
+    isDisabled: false,
+  },
+  {
+    uid: "cust_102",
+    email: "marcus.vance@example.com",
+    displayName: "Marcus Vance",
+    role: "customer",
+    addresses: [],
+    createdAt: "2026-02-04T14:20:00Z",
+    isDisabled: false,
+  },
+  {
+    uid: "cust_103",
+    email: "elena.rostova@example.com",
+    displayName: "Elena Rostova",
+    role: "customer",
+    addresses: [],
+    createdAt: "2026-02-18T09:15:00Z",
+    isDisabled: false,
+  },
+  {
+    uid: "cust_104",
+    email: "customer@solestreet.com",
+    displayName: "Demo Customer",
+    role: "customer",
+    addresses: [],
+    createdAt: "2026-03-01T12:00:00Z",
+    isDisabled: false,
+  },
+];
+
 export function adminGetCustomers(): UserProfile[] {
-  if (typeof window === "undefined") return [];
+  if (typeof window === "undefined") return DEFAULT_CUSTOMERS;
   try {
     const raw = localStorage.getItem(KEYS.users);
-    if (!raw) return [];
+    if (!raw) {
+      const map: Record<string, UserProfile> = {};
+      DEFAULT_CUSTOMERS.forEach((c) => {
+        map[c.email.toLowerCase()] = c;
+      });
+      localStorage.setItem(KEYS.users, JSON.stringify(map));
+      return DEFAULT_CUSTOMERS;
+    }
     const usersMap: Record<string, UserProfile> = JSON.parse(raw);
-    return Object.values(usersMap).filter((u) => u.role === "customer");
+    const customers = Object.values(usersMap).filter((u) => u.role === "customer");
+    if (customers.length === 0) {
+      DEFAULT_CUSTOMERS.forEach((c) => {
+        usersMap[c.email.toLowerCase()] = c;
+      });
+      localStorage.setItem(KEYS.users, JSON.stringify(usersMap));
+      return DEFAULT_CUSTOMERS;
+    }
+    return customers;
   } catch {
-    return [];
+    return DEFAULT_CUSTOMERS;
+  }
+}
+
+export function adminCreateCustomer(data: {
+  email: string;
+  displayName: string;
+}): UserProfile {
+  const newCustomer: UserProfile = {
+    uid: `cust_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+    email: data.email.toLowerCase(),
+    displayName: data.displayName,
+    role: "customer",
+    addresses: [],
+    isDisabled: false,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  if (typeof window !== "undefined") {
+    try {
+      const raw = localStorage.getItem(KEYS.users);
+      const usersMap: Record<string, UserProfile> = raw ? JSON.parse(raw) : {};
+      usersMap[newCustomer.email] = newCustomer;
+      localStorage.setItem(KEYS.users, JSON.stringify(usersMap));
+    } catch {
+      // ignore
+    }
+  }
+
+  return newCustomer;
+}
+
+export function adminUpdateCustomer(
+  uid: string,
+  data: Partial<UserProfile>
+): UserProfile | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(KEYS.users);
+    if (!raw) return null;
+    const usersMap: Record<string, UserProfile> = JSON.parse(raw);
+    const key = Object.keys(usersMap).find((k) => usersMap[k].uid === uid);
+    if (!key) return null;
+    usersMap[key] = {
+      ...usersMap[key],
+      ...data,
+      updatedAt: new Date().toISOString(),
+    };
+    localStorage.setItem(KEYS.users, JSON.stringify(usersMap));
+    return usersMap[key];
+  } catch {
+    return null;
+  }
+}
+
+export function adminDeleteCustomer(uid: string): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const raw = localStorage.getItem(KEYS.users);
+    if (!raw) return false;
+    const usersMap: Record<string, UserProfile> = JSON.parse(raw);
+    const key = Object.keys(usersMap).find((k) => usersMap[k].uid === uid);
+    if (!key) return false;
+    delete usersMap[key];
+    localStorage.setItem(KEYS.users, JSON.stringify(usersMap));
+    return true;
+  } catch {
+    return false;
   }
 }
 

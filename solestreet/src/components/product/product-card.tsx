@@ -3,10 +3,11 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Star, StarHalf, ShoppingBag } from "lucide-react";
+import { Star, StarHalf, ShoppingBag, Heart } from "lucide-react";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useWishlist } from "@/context/wishlist-context";
 import type { Product } from "@/types";
 import { formatPrice, getDiscountPercentage, getStarRating } from "@/lib/format";
 
@@ -17,66 +18,84 @@ interface ProductCardProps {
 
 export function ProductCard({ product, index = 0 }: ProductCardProps) {
   const router = useRouter();
+  const { isInWishlist, toggleWishlist } = useWishlist();
   const { full, half, empty } = getStarRating(product.rating);
   const hasDiscount = !!product.compareAtPrice;
+  const inWishlist = isInWishlist(product.id);
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: index * 0.05 }}
+      transition={{ duration: 0.35, delay: index * 0.04 }}
     >
-      <Link
-        href={`/product/${product.slug}`}
-        className="group block"
-      >
-        <div className="relative aspect-square rounded-2xl overflow-hidden bg-zinc-100 mb-4">
-          <Image
-            src={product.images[0].url}
-            alt={product.images[0].alt}
-            fill
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
-          />
+      <div className="group block relative">
+        <div className="relative aspect-square rounded-2xl overflow-hidden bg-zinc-100 mb-3.5 border border-zinc-200/60 shadow-xs">
+          <Link href={`/product/${product.slug}`} className="block w-full h-full">
+            <Image
+              src={product.images[0].url}
+              alt={product.images[0].alt}
+              fill
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+              className="object-cover transition-transform duration-500 ease-out group-hover:scale-108"
+            />
+          </Link>
 
           {/* Badges */}
-          <div className="absolute top-3 left-3 flex flex-col gap-2">
+          <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10 pointer-events-none">
             {product.isNew && (
-              <Badge className="bg-zinc-900 text-white hover:bg-zinc-900 text-xs font-semibold px-2.5 py-1">
+              <Badge className="bg-zinc-950 text-white text-[10px] font-bold tracking-wider px-2.5 py-0.5 shadow-sm rounded-full">
                 NEW
               </Badge>
             )}
             {hasDiscount && (
-              <Badge className="bg-red-500 text-white hover:bg-red-500 text-xs font-semibold px-2.5 py-1">
+              <Badge className="bg-red-500 text-white text-[10px] font-bold tracking-wider px-2.5 py-0.5 shadow-sm rounded-full">
                 -{getDiscountPercentage(product.price, product.compareAtPrice!)}%
               </Badge>
             )}
             {product.isBestseller && !product.isNew && (
-              <Badge className="bg-amber-500 text-white hover:bg-amber-500 text-xs font-semibold px-2.5 py-1">
+              <Badge className="bg-amber-500 text-zinc-950 text-[10px] font-bold tracking-wider px-2.5 py-0.5 shadow-sm rounded-full">
                 BESTSELLER
               </Badge>
             )}
           </div>
 
+          {/* Wishlist toggle button */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              toggleWishlist(product.id, product.name);
+            }}
+            aria-label={inWishlist ? "Remove from wishlist" : "Add to wishlist"}
+            className="absolute top-3 right-3 z-10 w-9 h-9 rounded-full bg-white/90 backdrop-blur-md shadow-xs border border-zinc-200/50 flex items-center justify-center text-zinc-600 hover:text-red-500 hover:bg-white hover:scale-110 active:scale-95 transition-all duration-200"
+          >
+            <Heart
+              className={`h-4 w-4 transition-colors ${
+                inWishlist ? "fill-red-500 text-red-500" : ""
+              }`}
+            />
+          </button>
+
           {/* Quick add overlay */}
-          <div className="absolute inset-x-0 bottom-0 p-4 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
+          <div className="absolute inset-x-0 bottom-0 p-3 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 pointer-events-none group-hover:pointer-events-auto">
             <Button
-              className="w-full bg-zinc-900/90 hover:bg-zinc-900 text-white backdrop-blur-sm rounded-xl h-11 text-sm font-semibold"
+              className="w-full bg-zinc-900/95 hover:bg-zinc-950 text-white backdrop-blur-md rounded-xl h-10 text-xs font-semibold shadow-md transition-all"
               onClick={(e) => {
                 e.preventDefault();
-                // Navigate to product page for size selection
                 router.push(`/product/${product.slug}`);
               }}
             >
-              <ShoppingBag className="h-4 w-4 mr-2" />
+              <ShoppingBag className="h-3.5 w-3.5 mr-1.5" />
               View Options
             </Button>
           </div>
         </div>
 
         {/* Info */}
-        <div className="space-y-1.5">
-          <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
+        <Link href={`/product/${product.slug}`} className="block space-y-1.5 pt-1">
+          <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
             {product.brand}
           </p>
           <h3 className="font-semibold text-zinc-900 text-sm sm:text-base group-hover:text-zinc-600 transition-colors line-clamp-1">
@@ -124,14 +143,14 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
             {product.colors.map((color) => (
               <div
                 key={color.name}
-                className="h-4 w-4 rounded-full border border-zinc-200 shadow-sm"
+                className="h-3.5 w-3.5 rounded-full border border-zinc-200 shadow-2xs"
                 style={{ backgroundColor: color.hex }}
                 title={color.name}
               />
             ))}
           </div>
-        </div>
-      </Link>
+        </Link>
+      </div>
     </motion.div>
   );
 }

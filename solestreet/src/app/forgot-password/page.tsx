@@ -64,12 +64,12 @@ export default function ForgotPasswordPage() {
                 If an account exists with that email address, we&apos;ve sent password reset instructions.
               </p>
               <div className="pt-4">
-                <Link href="/login">
-                  <Button variant="outline" className="w-full rounded-xl">
+                <Button asChild variant="outline" className="w-full rounded-xl">
+                  <Link href="/login">
                     <ArrowLeft className="h-4 w-4 mr-2" />
                     Back to Sign In
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
               </div>
             </div>
           ) : (

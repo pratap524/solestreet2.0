@@ -39,6 +39,7 @@ import { getProductReviews, addProductReview } from "@/lib/firebase/firestore";
 import {
   formatPrice,
   getStarRating,
+  formatDate,
 } from "@/lib/format";
 import { ProductSection } from "@/components/home/product-section";
 import { products as allProducts } from "@/data/products";
@@ -533,7 +534,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
                     )}
                   </div>
                   <span className="text-xs text-zinc-400">
-                    {new Date(rev.createdAt).toLocaleDateString()}
+                    {formatDate(rev.createdAt)}
                   </span>
                 </div>
 

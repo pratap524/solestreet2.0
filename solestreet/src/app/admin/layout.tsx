@@ -41,19 +41,19 @@ export default function AdminLayout({
   const { user, isLoading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
 
-  // Redirect non-admin users
+  // Redirect non-admin users immediately
   useEffect(() => {
     if (!isLoading && (!user || user.role !== "admin")) {
-      router.push("/login?redirect=/admin");
+      router.push(`/login?redirect=${encodeURIComponent(pathname)}&unauthorized=true`);
     }
-  }, [user, isLoading, router]);
+  }, [user, isLoading, router, pathname]);
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="w-10 h-10 border-4 border-zinc-700 border-t-white rounded-full animate-spin" />
-          <p className="text-zinc-400 text-sm">Loading admin panel...</p>
+          <p className="text-zinc-400 text-sm font-medium">Verifying admin credentials...</p>
         </div>
       </div>
     );
@@ -61,16 +61,23 @@ export default function AdminLayout({
 
   if (!user || user.role !== "admin") {
     return (
-      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
-        <div className="text-center">
-          <Shield className="h-12 w-12 text-zinc-600 mx-auto mb-4" />
-          <h1 className="text-xl font-bold text-white mb-2">Access Denied</h1>
-          <p className="text-zinc-400 text-sm mb-6">
-            You need admin privileges to access this area.
+      <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-zinc-900 border border-zinc-800 rounded-2xl p-8 text-center shadow-2xl">
+          <div className="w-16 h-16 bg-red-500/10 text-red-500 border border-red-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <Shield className="h-8 w-8" />
+          </div>
+          <h1 className="text-2xl font-black text-white mb-2">Access Denied</h1>
+          <p className="text-zinc-400 text-sm mb-6 leading-relaxed">
+            Strict administrative security is enabled. You need an authorized administrator account to access the SoleStreet control panel.
           </p>
-          <Button asChild variant="outline" className="rounded-xl border-zinc-700 text-zinc-300 hover:text-white">
-            <Link href="/">Return to Store</Link>
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button asChild variant="outline" className="flex-1 rounded-xl border-zinc-700 text-zinc-300 hover:text-white">
+              <Link href="/">Return to Store</Link>
+            </Button>
+            <Button asChild className="flex-1 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-semibold">
+              <Link href={`/login?redirect=${encodeURIComponent(pathname)}`}>Admin Sign In</Link>
+            </Button>
+          </div>
         </div>
       </div>
     );

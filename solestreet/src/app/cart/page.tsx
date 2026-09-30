@@ -317,12 +317,12 @@ export default function CartPage() {
               )}
 
               {/* Checkout button */}
-              <Link href="/checkout" className="block">
-                <Button className="w-full bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl h-12 text-sm font-bold shadow-sm">
+              <Button asChild className="w-full bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl h-12 text-sm font-bold shadow-sm">
+                <Link href="/checkout">
                   <Lock className="h-4 w-4 mr-2" />
                   Proceed to Checkout
-                </Button>
-              </Link>
+                </Link>
+              </Button>
 
               {/* Trust signals */}
               <div className="flex items-center justify-center gap-4 pt-2">

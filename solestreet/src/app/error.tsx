@@ -37,14 +37,15 @@ export default function Error({
           >
             <RefreshCw className="h-4 w-4" /> Try Again
           </Button>
-          <Link href="/">
-            <Button
-              variant="outline"
-              className="w-full flex items-center justify-center gap-2 rounded-full border-neutral-300 dark:border-neutral-700 py-2.5 px-5"
-            >
+          <Button
+            asChild
+            variant="outline"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-full border-neutral-300 dark:border-neutral-700 py-2.5 px-5"
+          >
+            <Link href="/">
               <Home className="h-4 w-4" /> Return Home
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         </div>
       </div>
     </div>

@@ -209,15 +209,29 @@ export function CartSheet() {
                 </div>
               </div>
 
-              {shipping > 0 && (
-                <p className="text-xs text-zinc-500 text-center">
-                  Add{" "}
-                  <span className="font-semibold text-zinc-700">
-                    {formatPrice(150 - subtotal)}
-                  </span>{" "}
-                  more for free shipping
-                </p>
-              )}
+              {/* Free shipping progress bar */}
+              <div className="space-y-1.5 py-1">
+                <div className="flex items-center justify-between text-xs">
+                  {subtotal >= 150 ? (
+                    <span className="text-emerald-600 font-bold flex items-center gap-1">
+                      🎉 You unlocked FREE Shipping!
+                    </span>
+                  ) : (
+                    <span className="text-zinc-600">
+                      Add <span className="font-bold text-zinc-900">{formatPrice(150 - subtotal)}</span> more for <span className="font-semibold text-emerald-600">FREE shipping</span>
+                    </span>
+                  )}
+                  <span className="text-zinc-400 font-medium text-[11px]">{Math.min(100, Math.round((subtotal / 150) * 100))}%</span>
+                </div>
+                <div className="h-1.5 w-full bg-zinc-100 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${
+                      subtotal >= 150 ? "bg-emerald-500" : "bg-zinc-900"
+                    }`}
+                    style={{ width: `${Math.min(100, Math.max(4, (subtotal / 150) * 100))}%` }}
+                  />
+                </div>
+              </div>
 
               <Button
                 className="w-full bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl h-12 text-sm font-semibold"

@@ -16,7 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/context/auth-context";
 import { getOrderById } from "@/lib/firebase/firestore";
-import { formatPrice } from "@/lib/format";
+import { formatPrice, formatDate } from "@/lib/format";
 import type { Order } from "@/types";
 
 export default function OrderDetailPage({
@@ -63,9 +63,9 @@ export default function OrderDetailPage({
           <p className="text-xs text-zinc-500 mt-1 mb-6">
             We couldn&apos;t find an order with the ID #{resolvedParams.id}.
           </p>
-          <Link href="/account">
-            <Button className="w-full rounded-xl">Back to Account</Button>
-          </Link>
+          <Button asChild className="w-full rounded-xl">
+            <Link href="/account">Back to Account</Link>
+          </Button>
         </div>
       </div>
     );
@@ -106,9 +106,8 @@ export default function OrderDetailPage({
               <h1 className="text-2xl font-black text-zinc-900 tracking-tight mt-0.5">
                 #{order.id}
               </h1>
-              <p className="text-xs text-zinc-500 mt-1">
-                Placed on {new Date(order.createdAt).toLocaleDateString()} at{" "}
-                {new Date(order.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+              <p className="text-xs text-zinc-500 mt-1" suppressHydrationWarning>
+                Placed on {formatDate(order.createdAt)}
               </p>
             </div>
 

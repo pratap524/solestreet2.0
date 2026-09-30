@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { Toaster } from "sonner";
@@ -52,12 +53,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={inter.variable}>
-      <body className="font-sans antialiased bg-white text-zinc-900 min-h-screen flex flex-col">
+    <html lang="en" className={inter.variable} suppressHydrationWarning>
+      <body
+        className="font-sans antialiased bg-white text-zinc-900 min-h-screen flex flex-col"
+        suppressHydrationWarning
+      >
         <AuthProvider>
           <WishlistProvider>
             <CartProvider>
-              <Header />
+              <Suspense fallback={null}>
+                <Header />
+              </Suspense>
               <main className="flex-1">{children}</main>
               <Footer />
               <Toaster

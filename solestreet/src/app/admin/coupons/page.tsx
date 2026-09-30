@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { adminGetCoupons, adminCreateCoupon, adminUpdateCoupon, adminDeleteCoupon } from "@/lib/admin-data";
-import { formatPrice } from "@/lib/format";
+import { formatPrice, formatDate } from "@/lib/format";
 import { toast } from "sonner";
 import type { Coupon } from "@/types";
 
@@ -103,7 +103,7 @@ export default function AdminCouponsPage() {
             <div className="space-y-1 text-[10px] text-zinc-500 mb-4">
               {coupon.minSpend && <p>Min spend: {formatPrice(coupon.minSpend)}</p>}
               {coupon.usageLimit && <p>Usage limit: {coupon.usageLimit} (used: {coupon.usageCount})</p>}
-              <p>Expires: {new Date(coupon.expiresAt).toLocaleDateString()}</p>
+              <p>Expires: {formatDate(coupon.expiresAt)}</p>
             </div>
             <div className="flex gap-1">
               <Button variant="ghost" size="sm" className="flex-1 text-zinc-400 hover:text-white text-xs h-8 rounded-lg" onClick={() => toggleActive(coupon)}>

@@ -68,7 +68,7 @@ export function HeroSection() {
             <Button
               asChild
               size="lg"
-              className="bg-white text-zinc-900 hover:bg-zinc-100 font-bold rounded-xl h-13 px-8 text-base"
+              className="bg-white text-zinc-900 hover:bg-zinc-100 font-bold rounded-xl h-12 sm:h-14 px-8 text-base shadow-lg shadow-white/10"
             >
               <Link href="/shop">
                 Shop Collection
@@ -79,7 +79,7 @@ export function HeroSection() {
               asChild
               variant="outline"
               size="lg"
-              className="border-zinc-600 text-white hover:bg-zinc-800 hover:text-white rounded-xl h-13 px-8 text-base"
+              className="border-zinc-700 bg-zinc-900/60 text-white hover:bg-zinc-800 hover:text-white rounded-xl h-12 sm:h-14 px-8 text-base backdrop-blur-sm"
             >
               <Link href="/shop?sort=newest">New Arrivals</Link>
             </Button>
@@ -90,18 +90,18 @@ export function HeroSection() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.4 }}
-            className="mt-16 flex gap-10 sm:gap-16"
+            className="mt-16 flex gap-10 sm:gap-16 pt-8 border-t border-zinc-800/80"
           >
             {[
               { value: "50+", label: "Premium Brands" },
               { value: "10K+", label: "Happy Customers" },
-              { value: "Free", label: "Shipping $100+" },
+              { value: "Free", label: "Shipping $150+" },
             ].map((stat) => (
               <div key={stat.label}>
                 <p className="text-2xl sm:text-3xl font-black text-white">
                   {stat.value}
                 </p>
-                <p className="text-xs sm:text-sm text-zinc-500 mt-1">
+                <p className="text-xs sm:text-sm text-zinc-400 mt-1">
                   {stat.label}
                 </p>
               </div>

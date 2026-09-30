@@ -48,6 +48,21 @@ export function truncateText(text: string, maxLength: number): string {
 }
 
 /**
+ * Format a date deterministically to prevent server/client locale hydration mismatch.
+ */
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+export function formatDate(dateInput: string | Date | number): string {
+  try {
+    const d = new Date(dateInput);
+    if (isNaN(d.getTime())) return "";
+    return `${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCFullYear()}`;
+  } catch {
+    return "";
+  }
+}
+
+/**
  * Create a URL-safe slug from text.
  */
 export function slugify(text: string): string {
