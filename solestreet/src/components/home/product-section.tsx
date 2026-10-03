@@ -10,6 +10,7 @@ import type { Product } from "@/types";
 interface ProductSectionProps {
   title: string;
   subtitle?: string;
+  badge?: string;
   products: Product[];
   viewAllHref?: string;
   viewAllLabel?: string;
@@ -18,25 +19,32 @@ interface ProductSectionProps {
 export function ProductSection({
   title,
   subtitle,
+  badge,
   products,
   viewAllHref,
-  viewAllLabel = "View All",
+  viewAllLabel = "View Collection",
 }: ProductSectionProps) {
   return (
-    <section className="py-16 sm:py-24">
+    <section className="py-20 sm:py-28">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="flex items-end justify-between mb-10">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10 sm:mb-12 gap-4">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
+            transition={{ duration: 0.4 }}
           >
-            <h2 className="text-3xl sm:text-4xl font-black text-zinc-900 tracking-tight">
+            {badge && (
+              <span className="text-xs font-bold uppercase tracking-widest text-zinc-400 block mb-2">
+                {badge}
+              </span>
+            )}
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-zinc-950 tracking-tight">
               {title}
             </h2>
             {subtitle && (
-              <p className="mt-2 text-zinc-500 text-sm sm:text-base max-w-md">
+              <p className="mt-2 text-zinc-500 text-sm sm:text-base max-w-lg leading-relaxed">
                 {subtitle}
               </p>
             )}
@@ -46,30 +54,31 @@ export function ProductSection({
             <Button
               asChild
               variant="ghost"
-              className="text-zinc-600 hover:text-zinc-900 hidden sm:flex"
+              className="text-zinc-800 hover:text-zinc-950 font-bold hidden sm:flex items-center gap-1.5 group p-0 hover:bg-transparent"
             >
               <Link href={viewAllHref}>
-                {viewAllLabel}
-                <ArrowRight className="ml-1 h-4 w-4" />
+                <span>{viewAllLabel}</span>
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Link>
             </Button>
           )}
         </div>
 
-        {/* Grid */}
+        {/* Product Grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
           {products.map((product, i) => (
             <ProductCard key={product.id} product={product} index={i} />
           ))}
         </div>
 
-        {/* Mobile view all */}
+        {/* Mobile View All */}
         {viewAllHref && (
-          <div className="mt-8 text-center sm:hidden">
+          <div className="mt-10 text-center sm:hidden">
             <Button
               asChild
               variant="outline"
-              className="rounded-xl px-8"
+              size="lg"
+              className="w-full rounded-xl font-bold"
             >
               <Link href={viewAllHref}>
                 {viewAllLabel}

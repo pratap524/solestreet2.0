@@ -21,7 +21,7 @@ export function ProductJsonLd({ product }: ProductJsonLdProps) {
     offers: {
       "@type": "Offer",
       url: `${baseUrl}/product/${product.slug}`,
-      priceCurrency: "USD",
+      priceCurrency: "INR",
       price: product.price,
       priceValidUntil: "2027-12-31",
       itemCondition: "https://schema.org/NewCondition",

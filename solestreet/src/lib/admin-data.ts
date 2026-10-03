@@ -383,8 +383,79 @@ export function adminDeleteCoupon(id: string): boolean {
 
 // ─── Reviews ────────────────────────────────────────────────────────────────
 
+const DEFAULT_REVIEWS: Review[] = [
+  {
+    id: "rev_1",
+    productId: "1",
+    userId: "usr_101",
+    userName: "Devon Carter",
+    rating: 5,
+    title: "Unmatched cushioning for daily sprints",
+    comment:
+      "Landed these on launch day. The impact protection is exceptional and zero heel slipping on quick cuts. Truly elite craftsmanship and comfort.",
+    isVerifiedPurchase: true,
+    status: "approved",
+    createdAt: "2026-09-28T16:30:00Z",
+  },
+  {
+    id: "rev_2",
+    productId: "2",
+    userId: "usr_102",
+    userName: "Sophia Lin",
+    rating: 2,
+    title: "Runs half size smaller than expected",
+    comment:
+      "Love the colorway and materials, but the toe box is unusually narrow. I recommend going up a half size. Might need to exchange for a 9.5.",
+    isVerifiedPurchase: true,
+    status: "pending",
+    createdAt: "2026-10-01T11:15:00Z",
+  },
+  {
+    id: "rev_3",
+    productId: "3",
+    userId: "usr_103",
+    userName: "Jordan Reed",
+    rating: 1,
+    title: "Suspicious discount link spam",
+    comment:
+      "Visit my sketchysite discount portal for 90% off stolen coupons telegram @sketchy-deals-bot!",
+    isVerifiedPurchase: false,
+    status: "pending",
+    createdAt: "2026-10-02T08:45:00Z",
+  },
+  {
+    id: "rev_4",
+    productId: "4",
+    userId: "usr_104",
+    userName: "Elena Rostova",
+    rating: 5,
+    title: "Masterpiece in hand. Vault authentication was instant.",
+    comment:
+      "The leather quality and suede finish are top tier. Arrived double-boxed in mint condition with SoleStreet verified tags.",
+    isVerifiedPurchase: true,
+    status: "approved",
+    createdAt: "2026-10-02T19:20:00Z",
+  },
+  {
+    id: "rev_5",
+    productId: "1",
+    userId: "usr_105",
+    userName: "Chris Miller",
+    rating: 3,
+    title: "Good silhouette, laces feel a bit stiff",
+    comment:
+      "Overall nice pair for casual weekend rotation, but the stock laces are somewhat rigid. Swapped them with flat waxed laces.",
+    isVerifiedPurchase: true,
+    status: "hidden",
+    createdAt: "2026-09-25T14:10:00Z",
+  },
+];
+
 export function adminGetReviews(): Review[] {
-  return getStore<Review>(KEYS.reviews);
+  const stored = getStore<Review>(KEYS.reviews);
+  if (stored.length > 0) return stored;
+  setStore(KEYS.reviews, DEFAULT_REVIEWS);
+  return [...DEFAULT_REVIEWS];
 }
 
 export function adminUpdateReviewStatus(

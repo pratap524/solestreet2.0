@@ -15,7 +15,7 @@ export const SHIPPING_METHODS: ShippingMethod[] = [
     name: "Standard Ground Delivery",
     price: 10,
     estimatedDays: "3-5 business days",
-    description: "Free on orders over $150. Reliable door-to-door ground shipping.",
+    description: "Free on orders over ₹150. Reliable door-to-door ground shipping.",
   },
   {
     id: "express",

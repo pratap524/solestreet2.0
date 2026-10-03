@@ -293,3 +293,31 @@ export async function setDefaultUserAddress(
   }));
   await updateUserProfile(uid, { addresses: updated });
 }
+
+export async function updateUserAddress(
+  uid: string,
+  addressId: string,
+  address: Partial<Omit<Address, "id">>
+): Promise<Address | null> {
+  const profile = await getUserProfile(uid);
+  if (!profile) return null;
+
+  let updatedTarget: Address | null = null;
+  const updatedAddresses = profile.addresses.map((a) => {
+    if (a.id === addressId) {
+      updatedTarget = {
+        ...a,
+        ...address,
+        id: a.id,
+      };
+      return updatedTarget;
+    }
+    if (address.isDefault) {
+      return { ...a, isDefault: false };
+    }
+    return a;
+  });
+
+  await updateUserProfile(uid, { addresses: updatedAddresses });
+  return updatedTarget;
+}

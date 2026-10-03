@@ -3,17 +3,30 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const badgeVariants = cva(
-  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-neutral-950 focus:ring-offset-2 dark:focus:ring-neutral-300",
+  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-950 focus:ring-offset-2",
   {
     variants: {
       variant: {
         default:
-          "border-transparent bg-neutral-900 text-neutral-50 shadow-xs hover:bg-neutral-800 dark:bg-neutral-50 dark:text-neutral-900 dark:hover:bg-neutral-200",
+          "border-transparent bg-zinc-950 text-white shadow-2xs hover:bg-zinc-800",
         secondary:
-          "border-transparent bg-neutral-100 text-neutral-900 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-50 dark:hover:bg-neutral-700",
+          "border-zinc-200/80 bg-zinc-100 text-zinc-800 hover:bg-zinc-200",
         destructive:
-          "border-transparent bg-red-500 text-neutral-50 shadow-xs hover:bg-red-600 dark:bg-red-900 dark:text-neutral-50 dark:hover:bg-red-800",
-        outline: "text-neutral-950 dark:text-neutral-50 border-neutral-200 dark:border-neutral-800",
+          "border-transparent bg-red-500 text-white shadow-2xs hover:bg-red-600",
+        outline:
+          "text-zinc-900 border-zinc-200 bg-transparent",
+        sale:
+          "border-transparent bg-red-500 text-white font-bold tracking-wider text-[10px] uppercase shadow-2xs",
+        bestseller:
+          "border-transparent bg-amber-400 text-zinc-950 font-bold tracking-wider text-[10px] uppercase shadow-2xs",
+        new:
+          "border-transparent bg-zinc-950 text-white font-bold tracking-wider text-[10px] uppercase shadow-2xs",
+        success:
+          "border-emerald-500/20 bg-emerald-500/10 text-emerald-700",
+        warning:
+          "border-amber-500/20 bg-amber-500/10 text-amber-700",
+        info:
+          "border-blue-500/20 bg-blue-500/10 text-blue-700",
       },
     },
     defaultVariants: {

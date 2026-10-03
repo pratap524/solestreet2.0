@@ -1,10 +1,11 @@
 /**
- * Format a number as USD currency.
+ * Format a number as INR (₹) currency.
  */
 export function formatPrice(price: number): string {
-  return new Intl.NumberFormat("en-US", {
+  return new Intl.NumberFormat("en-IN", {
     style: "currency",
-    currency: "USD",
+    currency: "INR",
+    maximumFractionDigits: 2,
   }).format(price);
 }
 

@@ -15,6 +15,7 @@ import {
   FREE_SHIPPING_THRESHOLD,
   TAX_RATE,
 } from "@/lib/constants";
+import { formatPrice } from "@/lib/format";
 import { validateCoupon } from "@/lib/firebase/firestore";
 import { toast } from "sonner";
 
@@ -244,7 +245,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setCouponCode(code.toUpperCase());
         setDiscount(res.discountAmount);
         localStorage.setItem("solestreet-coupon", code.toUpperCase());
-        toast.success(`Coupon ${code.toUpperCase()} applied (-$${res.discountAmount.toFixed(2)})`);
+        toast.success(`Coupon ${code.toUpperCase()} applied (-${formatPrice(res.discountAmount)})`);
         return true;
       } else {
         toast.error(res.message || "Invalid coupon code");

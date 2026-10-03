@@ -55,7 +55,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={inter.variable} suppressHydrationWarning>
       <body
-        className="font-sans antialiased bg-white text-zinc-900 min-h-screen flex flex-col"
+        className="font-sans antialiased bg-[#fafaf9] text-zinc-950 min-h-screen flex flex-col selection:bg-zinc-900 selection:text-white"
         suppressHydrationWarning
       >
         <AuthProvider>
@@ -69,10 +69,12 @@ export default function RootLayout({
               <Toaster
                 position="bottom-right"
                 toastOptions={{
+                  className: "rounded-2xl shadow-xl font-medium",
                   style: {
-                    background: "#18181b",
-                    color: "#fff",
-                    border: "1px solid #27272a",
+                    background: "#09090b",
+                    color: "#fafaf9",
+                    border: "1px solid rgba(255, 255, 255, 0.12)",
+                    padding: "12px 16px",
                   },
                 }}
               />

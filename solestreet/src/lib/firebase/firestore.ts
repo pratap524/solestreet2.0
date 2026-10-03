@@ -483,7 +483,7 @@ export async function validateCoupon(
     return {
       valid: false,
       discountAmount: 0,
-      message: `Minimum spend of $${coupon.minSpend} required for this coupon`,
+      message: `Minimum spend of ₹${coupon.minSpend} required for this coupon`,
     };
   }
 

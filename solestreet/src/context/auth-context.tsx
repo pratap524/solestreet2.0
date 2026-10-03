@@ -14,6 +14,7 @@ import {
   addUserAddress,
   deleteUserAddress,
   setDefaultUserAddress,
+  updateUserAddress,
 } from "@/lib/firebase/auth";
 import type { UserProfile, Address } from "@/types";
 
@@ -29,6 +30,7 @@ interface AuthContextType {
   resetPassword: (email: string) => Promise<void>;
   updateUser: (data: Partial<UserProfile>) => Promise<void>;
   addAddress: (address: Omit<Address, "id">) => Promise<Address>;
+  updateAddress: (addressId: string, address: Partial<Omit<Address, "id">>) => Promise<Address | null>;
   removeAddress: (addressId: string) => Promise<void>;
   setAsDefaultAddress: (addressId: string) => Promise<void>;
 }
@@ -182,6 +184,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return newAddr;
   };
 
+  const updateAddress = async (
+    addressId: string,
+    address: Partial<Omit<Address, "id">>
+  ) => {
+    if (!user) throw new Error("Must be logged in to update address");
+    const updated = await updateUserAddress(user.uid, addressId, address);
+    if (updated) {
+      setUser((prev) => {
+        if (!prev) return null;
+        const current = prev.addresses || [];
+        const nextList = current.map((a) => {
+          if (a.id === addressId) {
+            return updated;
+          }
+          if (updated.isDefault) {
+            return { ...a, isDefault: false };
+          }
+          return a;
+        });
+        return { ...prev, addresses: nextList };
+      });
+    }
+    return updated;
+  };
+
   const removeAddress = async (addressId: string) => {
     if (!user) return;
     await deleteUserAddress(user.uid, addressId);
@@ -223,6 +250,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         resetPassword,
         updateUser,
         addAddress,
+        updateAddress,
         removeAddress,
         setAsDefaultAddress,
       }}
