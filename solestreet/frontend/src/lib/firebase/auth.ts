@@ -33,6 +33,17 @@ function saveLocalUsersDb(dbRecord: Record<string, UserProfile>) {
   }
 }
 
+async function hashLocalPassword(password: string): Promise<string> {
+  if (typeof crypto === "undefined" || !crypto.subtle) {
+    throw new Error("Secure password hashing is unavailable in this browser.");
+  }
+  const bytes = new TextEncoder().encode(password);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
+
 export async function signUpWithEmail(
   email: string,
   pass: string,
@@ -53,6 +64,7 @@ export async function signUpWithEmail(
       addresses: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      passwordHash: await hashLocalPassword(pass),
     };
     users[email.toLowerCase()] = profile;
     saveLocalUsersDb(users);
@@ -86,37 +98,76 @@ export async function signInWithEmail(
 ): Promise<UserProfile> {
   if (!isFirebaseConfigured()) {
     const users = getLocalUsersDb();
-    const isAdminEmail =
-      email.toLowerCase() === "admin@solestreet.com" ||
-      email.toLowerCase().startsWith("admin@");
-    const existing = users[email.toLowerCase()];
+    const normalizedEmail = email.toLowerCase();
+    const isDemoAdmin = normalizedEmail === "admin@solestreet.com" || normalizedEmail === "majorpartap2026@gmail.com";
+    const isDemoCustomer = normalizedEmail === "customer@solestreet.com";
+    const legacyPrimaryEmails = ["majorpartap2026@gmial.com", "marjorpartap2026@gamil.com"];
+    const legacyPrimaryEmail = legacyPrimaryEmails.find((legacyEmail) => users[legacyEmail]);
+    const legacyPrimary = normalizedEmail === "majorpartap2026@gmail.com" && legacyPrimaryEmail
+      ? users[legacyPrimaryEmail]
+      : undefined;
+    const existing = users[normalizedEmail] || legacyPrimary;
+
+    if (!existing && !isDemoAdmin && !isDemoCustomer) {
+      throw new Error("No account exists for this email. Please create an account first.");
+    }
+
+    const suppliedHash = await hashLocalPassword(pass);
+    const demoPassword = isDemoAdmin ? "Admin1234!" : isDemoCustomer ? "Customer1234!" : null;
+
+    const isLegacyPrimaryMigration = Boolean(legacyPrimary && normalizedEmail === "majorpartap2026@gmail.com");
+    if (existing?.passwordHash && existing.passwordHash !== suppliedHash && !(isLegacyPrimaryMigration && demoPassword === pass)) {
+      throw new Error("Invalid email or password.");
+    }
+    if (existing && !existing.passwordHash) {
+      // Migrate older demo records created before local password support.
+      // Only the fixed demo credentials may perform this migration.
+      if (demoPassword !== pass) {
+        throw new Error("Invalid email or password.");
+      }
+      existing.passwordHash = suppliedHash;
+      existing.email = normalizedEmail;
+      existing.displayName = "Major Partap";
+      existing.role = "admin";
+      if (legacyPrimaryEmail) delete users[legacyPrimaryEmail];
+      users[normalizedEmail] = existing;
+      saveLocalUsersDb(users);
+    }
+
+    if (isLegacyPrimaryMigration && demoPassword === pass) {
+      existing.passwordHash = suppliedHash;
+      existing.email = normalizedEmail;
+      existing.displayName = "Major Partap";
+      existing.role = "admin";
+      if (legacyPrimaryEmail) delete users[legacyPrimaryEmail];
+      users[normalizedEmail] = existing;
+      saveLocalUsersDb(users);
+    }
+    if (!existing && demoPassword !== pass) {
+      throw new Error("Invalid email or password.");
+    }
 
     if (!existing) {
-      const uid = isAdminEmail
+      const uid = isDemoAdmin
         ? "admin_demo_uid"
         : "user_" + Math.random().toString(36).substring(2, 9);
       const profile: UserProfile = {
         uid,
-        email: email.toLowerCase(),
-        displayName: isAdminEmail
-          ? "Admin"
+        email: normalizedEmail,
+        displayName: isDemoAdmin
+          ? normalizedEmail === "majorpartap2026@gmail.com" ? "Major Partap" : "Admin"
           : email.split("@")[0] || "Shoe Enthusiast",
-        role: isAdminEmail ? "admin" : "customer",
+        role: isDemoAdmin ? "admin" : "customer",
         addresses: [],
         createdAt: new Date().toISOString(),
+        passwordHash: suppliedHash,
       };
-      users[email.toLowerCase()] = profile;
+      users[normalizedEmail] = profile;
       saveLocalUsersDb(users);
       if (typeof window !== "undefined") {
         localStorage.setItem(MOCK_STORAGE_USER_KEY, JSON.stringify(profile));
       }
       return profile;
-    }
-
-    if (isAdminEmail && existing.role !== "admin") {
-      existing.role = "admin";
-      users[email.toLowerCase()] = existing;
-      saveLocalUsersDb(users);
     }
 
     if (typeof window !== "undefined") {

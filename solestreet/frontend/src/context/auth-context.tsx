@@ -25,7 +25,6 @@ interface AuthContextType {
   signIn: (email: string, pass: string) => Promise<void>;
   signUp: (email: string, pass: string, name: string) => Promise<void>;
   signInWithGoogleProvider: () => Promise<void>;
-  signInAsAdmin: () => Promise<void>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   updateUser: (data: Partial<UserProfile>) => Promise<void>;
@@ -124,26 +123,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const signInAsAdmin = async () => {
-    const adminProfile: UserProfile = {
-      uid: "admin_demo_uid",
-      email: "admin@solestreet.com",
-      displayName: "Admin",
-      role: "admin",
-      addresses: [],
-      createdAt: new Date().toISOString(),
-    };
-    if (typeof window !== "undefined") {
-      localStorage.setItem("solestreet_mock_user", JSON.stringify(adminProfile));
-      // Also store in mock users DB
-      const usersDbRaw = localStorage.getItem("solestreet_mock_users_db");
-      const usersDb = usersDbRaw ? JSON.parse(usersDbRaw) : {};
-      usersDb[adminProfile.email] = adminProfile;
-      localStorage.setItem("solestreet_mock_users_db", JSON.stringify(usersDb));
-    }
-    setUser(adminProfile);
   };
 
   const signOut = async () => {
@@ -245,7 +224,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signIn,
         signUp,
         signInWithGoogleProvider,
-        signInAsAdmin,
         signOut,
         resetPassword,
         updateUser,

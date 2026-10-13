@@ -48,9 +48,11 @@ import {
   adminCreateProduct,
   adminUpdateProduct,
   adminDeleteProduct,
+  canManageProduct,
 } from "@/lib/admin-data";
 import { formatPrice, slugify } from "@/lib/format";
 import { toast } from "sonner";
+import { useAuth } from "@/context/auth-context";
 import type {
   Product,
   ShoeCategory,
@@ -145,6 +147,7 @@ export default function AdminProductsPage() {
   // Delete State
   const [deleteProduct, setDeleteProduct] = useState<Product | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const { user } = useAuth();
 
   // Reload products
   const reloadProducts = useCallback(() => {
@@ -306,7 +309,8 @@ export default function AdminProductsPage() {
       slug: newSlug,
       isNew: true,
     };
-    adminCreateProduct(copyData);
+    if (!user) return;
+    adminCreateProduct(copyData, user.uid);
     reloadProducts();
     toast.success(`Duplicated "${product.name}" as "${copyName}"`);
   };
@@ -358,10 +362,12 @@ export default function AdminProductsPage() {
       };
 
       if (editingProduct) {
-        adminUpdateProduct(editingProduct.id, preparedData);
+        if (!user) throw new Error("Authentication required.");
+        adminUpdateProduct(editingProduct.id, preparedData, user.uid);
         toast.success(`"${form.name}" updated successfully.`);
       } else {
-        adminCreateProduct(preparedData);
+        if (!user) throw new Error("Authentication required.");
+        adminCreateProduct(preparedData, user.uid);
         toast.success(`"${form.name}" created successfully.`);
       }
 
@@ -379,7 +385,8 @@ export default function AdminProductsPage() {
     if (!deleteProduct) return;
     setIsDeleting(true);
     try {
-      adminDeleteProduct(deleteProduct.id);
+      if (!user) throw new Error("Authentication required.");
+      adminDeleteProduct(deleteProduct.id, user.uid);
       reloadProducts();
       toast.success(`"${deleteProduct.name}" permanently deleted.`);
       setDeleteProduct(null);
@@ -902,6 +909,7 @@ export default function AdminProductsPage() {
                         <Button
                           variant="ghost"
                           size="icon"
+                          disabled={!user || !canManageProduct(product, user.uid)}
                           className="h-8 w-8 text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-colors"
                           onClick={() => handleOpenEdit(product)}
                           title="Edit product"
@@ -920,6 +928,7 @@ export default function AdminProductsPage() {
                         <Button
                           variant="ghost"
                           size="icon"
+                          disabled={!user || !canManageProduct(product, user.uid)}
                           className="h-8 w-8 text-zinc-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                           onClick={() => setDeleteProduct(product)}
                           title="Delete product"

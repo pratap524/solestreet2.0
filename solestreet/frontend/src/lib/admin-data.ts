@@ -27,6 +27,9 @@ const KEYS = {
   categories: "solestreet_admin_categories",
 } as const;
 
+// Only this account may provision additional administrators.
+export const SUPER_ADMIN_EMAIL = "majorpartap2026@gmail.com";
+
 function getStore<T>(key: string, fallback: T[] = []): T[] {
   if (typeof window === "undefined") return fallback;
   try {
@@ -48,17 +51,27 @@ function setStore<T>(key: string, data: T[]) {
 
 export function adminGetProducts(): Product[] {
   const stored = getStore<Product>(KEYS.products);
-  return stored.length > 0 ? stored : [...localProducts];
+  if (stored.length > 0) return stored;
+  // Legacy seed products are system-owned and cannot be changed by an arbitrary admin.
+  // New products receive an explicit createdBy UID below.
+  return localProducts.map((product) => ({ ...product, createdBy: product.createdBy || "system" }));
+}
+
+export function canManageProduct(product: Product, actorUid: string): boolean {
+  return Boolean(actorUid && product.createdBy === actorUid);
 }
 
 export function adminCreateProduct(
-  data: Omit<Product, "id" | "createdAt" | "updatedAt">
+  data: Omit<Product, "id" | "createdAt" | "updatedAt" | "createdBy">,
+  actorUid: string
 ): Product {
+  if (!actorUid) throw new Error("Authentication required to create a product.");
   const product: Product = {
     ...data,
     id: `prod_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
+    createdBy: actorUid,
   };
   const products = adminGetProducts();
   products.unshift(product);
@@ -68,18 +81,28 @@ export function adminCreateProduct(
 
 export function adminUpdateProduct(
   id: string,
-  data: Partial<Product>
+  data: Partial<Product>,
+  actorUid: string
 ): Product | null {
   const products = adminGetProducts();
   const idx = products.findIndex((p) => p.id === id);
   if (idx === -1) return null;
+  if (!canManageProduct(products[idx], actorUid)) {
+    throw new Error("Only the admin who created this product can edit it.");
+  }
+  delete data.createdBy;
   products[idx] = { ...products[idx], ...data, updatedAt: new Date().toISOString() };
   setStore(KEYS.products, products);
   return products[idx];
 }
 
-export function adminDeleteProduct(id: string): boolean {
+export function adminDeleteProduct(id: string, actorUid: string): boolean {
   const products = adminGetProducts();
+  const product = products.find((p) => p.id === id);
+  if (!product) return false;
+  if (!canManageProduct(product, actorUid)) {
+    throw new Error("Only the admin who created this product can delete it.");
+  }
   const filtered = products.filter((p) => p.id !== id);
   if (filtered.length === products.length) return false;
   setStore(KEYS.products, filtered);
@@ -279,6 +302,42 @@ export function adminCreateCustomer(data: {
   }
 
   return newCustomer;
+}
+
+/** Creates an admin in the local development fallback. Production admin creation
+ * is performed by /api/admin/admins using Firebase Admin SDK. */
+export async function adminCreateAdmin(data: {
+  email: string;
+  displayName: string;
+  password: string;
+}, actorUid: string, actorEmail: string): Promise<UserProfile> {
+  if (!actorUid) throw new Error("Authentication required.");
+  if (actorEmail.trim().toLowerCase() !== SUPER_ADMIN_EMAIL) {
+    throw new Error("Only the primary administrator can create admin accounts.");
+  }
+  const passwordBytes = new TextEncoder().encode(data.password);
+  const digest = await crypto.subtle.digest("SHA-256", passwordBytes);
+  const passwordHash = Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+  const email = data.email.trim().toLowerCase();
+  const admin: UserProfile = {
+    uid: `admin_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    email,
+    displayName: data.displayName.trim(),
+    role: "admin",
+    addresses: [],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    passwordHash,
+  };
+  if (typeof window === "undefined") return admin;
+  const raw = localStorage.getItem(KEYS.users);
+  const usersMap: Record<string, UserProfile> = raw ? JSON.parse(raw) : {};
+  if (usersMap[email]) throw new Error("An account with this email already exists.");
+  usersMap[email] = admin;
+  localStorage.setItem(KEYS.users, JSON.stringify(usersMap));
+  return admin;
 }
 
 export function adminUpdateCustomer(

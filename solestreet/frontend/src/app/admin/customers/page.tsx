@@ -38,10 +38,13 @@ import {
   adminDeleteCustomer,
   adminToggleCustomerStatus,
   adminGetOrders,
+  adminCreateAdmin,
+  SUPER_ADMIN_EMAIL,
 } from "@/lib/admin-data";
 import { formatPrice, formatDate } from "@/lib/format";
 import { toast } from "sonner";
 import type { UserProfile, Order } from "@/types";
+import { useAuth } from "@/context/auth-context";
 
 const PAGE_SIZE = 10;
 
@@ -58,8 +61,13 @@ export default function AdminCustomersPage() {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   // Form states
-  const [createForm, setCreateForm] = useState({ displayName: "", email: "" });
+  const [createForm, setCreateForm] = useState({ displayName: "", email: "", password: "", role: "customer" as "customer" | "admin" });
+  const [adminDialogOpen, setAdminDialogOpen] = useState(false);
+  const [adminForm, setAdminForm] = useState({ displayName: "", email: "", password: "" });
+  const [isCreatingAdmin, setIsCreatingAdmin] = useState(false);
   const [editForm, setEditForm] = useState({ displayName: "", email: "" });
+  const { user, firebaseUser } = useAuth();
+  const canCreateAdmins = user?.email.toLowerCase() === SUPER_ADMIN_EMAIL;
 
   const loadData = useCallback(() => {
     setCustomers(adminGetCustomers());
@@ -95,19 +103,55 @@ export default function AdminCustomersPage() {
     );
   };
 
-  const handleCreateCustomer = () => {
+  const handleCreateCustomer = async () => {
     if (!createForm.displayName.trim() || !createForm.email.trim()) {
       toast.error("Please provide both name and email.");
       return;
     }
-    adminCreateCustomer({
-      displayName: createForm.displayName.trim(),
-      email: createForm.email.trim(),
-    });
+    if (createForm.role === "admin") {
+      setAdminForm({ displayName: createForm.displayName, email: createForm.email, password: createForm.password });
+      setCreateDialogOpen(false);
+      setAdminDialogOpen(true);
+      return;
+    }
+    adminCreateCustomer({ displayName: createForm.displayName.trim(), email: createForm.email.trim() });
     loadData();
     setCreateDialogOpen(false);
-    setCreateForm({ displayName: "", email: "" });
+    setCreateForm({ displayName: "", email: "", password: "", role: "customer" });
     toast.success("Customer created successfully.");
+  };
+
+  const handleCreateAdmin = async () => {
+    if (!user || !adminForm.displayName.trim() || !adminForm.email.trim() || adminForm.password.length < 8 || !/[A-Z]/.test(adminForm.password) || !/[0-9]/.test(adminForm.password)) {
+      toast.error("Use a name, valid email, and a password with 8+ characters, one uppercase letter, and one number.");
+      return;
+    }
+    if (!canCreateAdmins) {
+      toast.error("Only the primary administrator can create admin accounts.");
+      return;
+    }
+    setIsCreatingAdmin(true);
+    try {
+      if (firebaseUser) {
+        const token = await firebaseUser.getIdToken(true);
+        const response = await fetch("/api/admin/admins", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify(adminForm),
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Unable to create admin.");
+      } else {
+        await adminCreateAdmin(adminForm, user.uid, user.email);
+      }
+      setAdminDialogOpen(false);
+      setAdminForm({ displayName: "", email: "", password: "" });
+      toast.success("Admin account created successfully.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to create admin account.");
+    } finally {
+      setIsCreatingAdmin(false);
+    }
   };
 
   const handleOpenEdit = (customer: UserProfile) => {
@@ -164,20 +208,28 @@ export default function AdminCustomersPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button
+          {canCreateAdmins && <Button
             variant="outline"
             onClick={loadData}
             className="rounded-xl border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50 h-10 px-3 text-xs font-semibold shadow-xs"
           >
             <RefreshCw className="h-3.5 w-3.5 sm:mr-1.5" />
             <span className="hidden sm:inline">Refresh</span>
+          </Button>}
+          <Button
+            onClick={() => setAdminDialogOpen(true)}
+            variant="outline"
+            className="rounded-xl border-purple-200 bg-purple-50 text-purple-800 hover:bg-purple-100 h-10 px-4 font-semibold text-xs sm:text-sm"
+          >
+            <ShieldCheck className="h-4 w-4 mr-1.5" />
+            Add Admin
           </Button>
           <Button
             onClick={() => setCreateDialogOpen(true)}
             className="bg-zinc-900 text-white hover:bg-zinc-800 rounded-xl h-10 px-4 font-semibold text-xs sm:text-sm shadow-xs"
           >
             <Plus className="h-4 w-4 mr-1.5" />
-            Add Customer
+            Add Account
           </Button>
         </div>
       </div>
@@ -402,12 +454,35 @@ export default function AdminCustomersPage() {
       </Dialog>
 
       {/* Create Customer Dialog */}
+      <Dialog open={adminDialogOpen} onOpenChange={setAdminDialogOpen}>
+        <DialogContent className="max-w-md bg-white border-zinc-200 text-zinc-900 rounded-2xl p-6 shadow-xl">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-black text-zinc-900">Create Admin Account</DialogTitle>
+            <DialogDescription className="text-xs text-zinc-500">
+              This account can access the admin panel. Only an existing admin can create another admin.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <Input placeholder="Full name" value={adminForm.displayName} onChange={(e) => setAdminForm({ ...adminForm, displayName: e.target.value })} className="bg-zinc-50 border-zinc-200 rounded-xl" />
+            <Input type="email" placeholder="Email address" value={adminForm.email} onChange={(e) => setAdminForm({ ...adminForm, email: e.target.value })} className="bg-zinc-50 border-zinc-200 rounded-xl" />
+            <div>
+              <Input type="password" placeholder="Password: 8+ chars, uppercase, number" value={adminForm.password} onChange={(e) => setAdminForm({ ...adminForm, password: e.target.value })} className="bg-zinc-50 border-zinc-200 rounded-xl" />
+              <p className="mt-1.5 text-[11px] text-zinc-500">The new admin can sign in immediately after creation.</p>
+            </div>
+            <div className="flex gap-2 pt-2">
+              <Button variant="outline" onClick={() => setAdminDialogOpen(false)} className="flex-1 rounded-xl border-zinc-200 font-semibold text-xs h-10">Cancel</Button>
+              <Button disabled={isCreatingAdmin} onClick={handleCreateAdmin} className="flex-1 bg-purple-700 hover:bg-purple-800 text-white rounded-xl font-semibold text-xs h-10">{isCreatingAdmin ? "Creating..." : "Create Admin"}</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
         <DialogContent className="max-w-md bg-white border-zinc-200 text-zinc-900 rounded-2xl p-6 shadow-xl">
           <DialogHeader>
-            <DialogTitle className="text-lg font-black text-zinc-900">Add New Customer</DialogTitle>
+            <DialogTitle className="text-lg font-black text-zinc-900">Add New Account</DialogTitle>
             <DialogDescription className="text-xs text-zinc-500">
-              Create a customer profile to manage addresses and orders.
+              Choose the account role. Admin accounts receive access to the control panel.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
@@ -430,6 +505,29 @@ export default function AdminCustomersPage() {
                 className="bg-zinc-50 border-zinc-200 rounded-xl"
               />
             </div>
+            <div>
+              <label className="text-xs font-bold text-zinc-700 mb-1.5 block">Account Role *</label>
+              <select
+                value={createForm.role}
+                onChange={(e) => setCreateForm({ ...createForm, role: e.target.value as "customer" | "admin" })}
+                className="w-full h-10 rounded-xl border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-900"
+              >
+                <option value="customer">Customer</option>
+                {canCreateAdmins && <option value="admin">Admin</option>}
+              </select>
+            </div>
+            {createForm.role === "admin" && (
+              <div>
+                <label className="text-xs font-bold text-zinc-700 mb-1.5 block">Admin Password *</label>
+                <Input
+                  type="password"
+                  placeholder="8+ chars, uppercase, number"
+                  value={createForm.password}
+                  onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
+                  className="bg-zinc-50 border-zinc-200 rounded-xl"
+                />
+              </div>
+            )}
             <div className="flex gap-2 pt-2">
               <Button
                 variant="outline"
@@ -442,7 +540,7 @@ export default function AdminCustomersPage() {
                 onClick={handleCreateCustomer}
                 className="flex-1 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl font-semibold text-xs h-10 shadow-xs"
               >
-                Create Customer
+                Create {createForm.role === "admin" ? "Admin" : "Customer"}
               </Button>
             </div>
           </div>

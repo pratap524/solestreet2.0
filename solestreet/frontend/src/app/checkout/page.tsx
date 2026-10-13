@@ -44,7 +44,7 @@ import type { Order } from "@/types";
 type CheckoutStep = 1 | 2 | 3 | 4 | 5;
 
 function CheckoutContent() {
-  const { user } = useAuth();
+  const { user, firebaseUser } = useAuth();
   const {
     items,
     subtotal,
@@ -143,6 +143,10 @@ function CheckoutContent() {
 
   // Step 4 Final Payment & Order Placement
   const handlePlaceOrder = async () => {
+    if (!user) {
+      setCheckoutError("You must sign in before placing an order.");
+      return;
+    }
     setIsProcessing(true);
     setStripeLoadingStep(1);
     setCheckoutError(null);
@@ -154,11 +158,15 @@ function CheckoutContent() {
     try {
       const shippingData = addressForm.getValues();
 
+      const idToken = firebaseUser ? await firebaseUser.getIdToken() : null;
       const response = await fetch("/api/checkout", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}),
+        },
         body: JSON.stringify({
-          userId: user?.uid || "guest_" + Math.random().toString(36).substring(2, 8),
+          userId: user.uid,
           customer: {
             name: customerName,
             email: customerEmail,
@@ -231,6 +239,26 @@ function CheckoutContent() {
       setIsApplyingPromo(false);
     }
   };
+
+  if (!user) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center px-6 py-16">
+        <div className="max-w-md w-full rounded-3xl border border-zinc-200 bg-white p-8 text-center shadow-sm">
+          <Lock className="mx-auto h-8 w-8 text-zinc-700" />
+          <h1 className="mt-4 text-2xl font-black text-zinc-950">Sign in to checkout</h1>
+          <p className="mt-2 text-sm text-zinc-500">
+            You need an authenticated SoleStreet account before you can place an order.
+          </p>
+          <Button asChild className="mt-6 h-11 w-full rounded-xl bg-zinc-950 text-white">
+            <Link href="/login?redirect=/checkout">Sign In Securely</Link>
+          </Button>
+          <p className="mt-3 text-xs text-zinc-400">
+            Don&apos;t have an account? <Link href="/register?redirect=/checkout" className="font-bold text-zinc-800 underline">Create one</Link>
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   // Empty checkout view (when items === 0 and not on order confirmation step)
   if (items.length === 0 && currentStep !== 5) {

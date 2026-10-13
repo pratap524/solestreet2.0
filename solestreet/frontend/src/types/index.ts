@@ -65,6 +65,8 @@ export interface Product {
   isBestseller: boolean;
   createdAt: string;
   updatedAt?: string;
+  /** UID of the admin who created this product. Required for product ownership checks. */
+  createdBy?: string;
 }
 
 // ─── Category Types ──────────────────────────────────────────────────────────
@@ -153,6 +155,8 @@ export interface UserProfile {
   addresses: Address[];
   createdAt: string;
   updatedAt?: string;
+  /** Only used by the local development fallback; Firebase never stores plaintext passwords. */
+  passwordHash?: string;
 }
 
 // ─── Order Types ─────────────────────────────────────────────────────────────

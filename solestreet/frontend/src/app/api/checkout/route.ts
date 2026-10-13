@@ -3,6 +3,8 @@ import { z } from "zod";
 import { getProductById, checkInventory, createOrderInDb, validateCoupon } from "@/lib/firebase/firestore";
 import { SHIPPING_METHODS, FREE_SHIPPING_THRESHOLD, TAX_RATE } from "@/lib/constants";
 import type { OrderItem, ShoeSize } from "@/types";
+import { getAdminAuth } from "@/lib/firebase/admin";
+import { isFirebaseConfigured } from "@/lib/firebase/client";
 
 const checkoutItemSchema = z.object({
   productId: z.string(),
@@ -65,6 +67,30 @@ export async function POST(req: Request) {
       couponCode,
       items: rawItems,
     } = parsed.data;
+
+    if (userId.startsWith("guest_") || userId.trim().length < 3) {
+      return NextResponse.json(
+        { error: "Authentication is required before placing an order." },
+        { status: 401 }
+      );
+    }
+
+    // In a configured deployment, bind the order to a verified Firebase token.
+    // The client-provided UID is never trusted on its own.
+    if (isFirebaseConfigured()) {
+      const authHeader = req.headers.get("Authorization");
+      if (!authHeader?.startsWith("Bearer ")) {
+        return NextResponse.json({ error: "Authentication is required before checkout." }, { status: 401 });
+      }
+      try {
+        const decoded = await getAdminAuth().verifyIdToken(authHeader.slice(7));
+        if (decoded.uid !== userId) {
+          return NextResponse.json({ error: "Authenticated user does not match the order owner." }, { status: 403 });
+        }
+      } catch {
+        return NextResponse.json({ error: "Invalid or expired authentication token." }, { status: 401 });
+      }
+    }
 
     // 1. Inventory Check
     const inventoryCheck = await checkInventory(

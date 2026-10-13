@@ -96,6 +96,16 @@ export function ProfileSettings({
           </div>
         </div>
 
+        <div className="mt-6 flex items-center justify-between rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-zinc-500">Account Role</p>
+            <p className="mt-0.5 text-sm font-bold text-zinc-900">{user.role === "admin" ? "Administrator" : "Customer"}</p>
+          </div>
+          <Badge className={user.role === "admin" ? "bg-purple-100 text-purple-800 border-purple-200" : "bg-zinc-200 text-zinc-700 border-zinc-300"}>
+            {user.role === "admin" ? "ADMIN" : "CUSTOMER"}
+          </Badge>
+        </div>
+
         <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-5 max-w-xl">
           {/* Display Name */}
           <div>
